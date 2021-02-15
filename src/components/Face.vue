@@ -3,8 +3,8 @@
     <div id="errorMsg"></div>
     <video id="video" position="relative" width="640" height="480" autoplay></video>
     <canvas id="canvas" width="640" height="480"></canvas>
-    <span class="heart" id="left">💚</span>
-    <span class="heart" id="right">💚</span>
+    <span class="heart" id="left" display=none>💚</span>
+    <span class="heart" id="right" display=none>💚</span>
   </div>
 </template>
 
@@ -57,22 +57,27 @@ navigator.mediaDevices.getUserMedia(constraints)
       if (pose) {
         const leftEye = pose.keypoints.find(point => point.part === 'leftEye')
         const rightEye = pose.keypoints.find(point => point.part === 'rightEye')
+        const leftElement = document.querySelector('#left')
+        const rightElement = document.querySelector('#right')
+        if (leftElement.style.display === 'none' || rightElement.style.display === 'none') {
+          leftElement.style.display = 'inline'
+          rightElement.style.display = 'inline'
+        }
         if (leftEye && leftEye.position) {
           const leftX = leftEye.position.x - 20
           const leftY  = leftEye.position.y - 20
-          document.querySelector('#left').style.left = `${leftX}px`
-          document.querySelector('#left').style.top = `${leftY}px`
+          leftElement.style.left = `${leftX}px`
+          leftElement.style.top = `${leftY}px`
         }
         if (rightEye && rightEye.position) {
           const rightX = rightEye.position.x - 20
           const rightY = rightEye.position.y - 20
-          document.querySelector('#right').style.left = `${rightX}px`
-          document.querySelector('#right').style.top = `${rightY}px`
+          rightElement.style.left = `${rightX}px`
+          rightElement.style.top = `${rightY}px`
         }
       }
     }, 1000);
   };
-  console.log('yolo')
   runPosenet()
 })
 .catch(function(error) {
