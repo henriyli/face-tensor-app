@@ -23,7 +23,14 @@ var constraints = window.constraints = {
   video: true
 };
 
-tf.setBackend('webgl')
+console.log('user agent', navigator.userAgent)
+if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+  console.log('Using tensorflow with cpu backend')
+  tf.setBackend('cpu')
+} else {
+  console.log('Using tensorflow with webgl backend')
+  tf.setBackend('webgl')
+}
     
 const scaleVideoToWindow = () => {
   const videoElement = document.querySelector('#video')
@@ -43,10 +50,32 @@ const videoIsNotLoaded = (videoElement) => {
   return videoElement.videoHeight === 0
 }
 
+const alignEmojisToKeypoints = (pose) => {
+  const leftEye = pose.keypoints.find(point => point.part === 'leftEye')
+  const rightEye = pose.keypoints.find(point => point.part === 'rightEye')
+  const leftElement = document.querySelector('#left')
+  const rightElement = document.querySelector('#right')
+  if (leftElement.style.display === 'none' || rightElement.style.display === 'none') {
+    leftElement.style.display = 'inline'
+    rightElement.style.display = 'inline'
+  }
+  if (leftEye && leftEye.position && leftEye.position.x && leftEye.position.y) {
+    const leftX = leftEye.position.x - 20
+    const leftY  = leftEye.position.y - 20
+    leftElement.style.left = `${leftX}px`
+    leftElement.style.top = `${leftY}px`
+  }
+  if (rightEye && rightEye.position && rightEye.position.x && rightEye.position.y) {
+    const rightX = rightEye.position.x - 40
+    const rightY = rightEye.position.y - 20
+    rightElement.style.left = `${rightX}px`
+    rightElement.style.top = `${rightY}px`
+  }
+}
+
 navigator.mediaDevices.getUserMedia(constraints)
 .then(function(stream) {
   var videoTracks = stream.getVideoTracks();
-  console.log('Got stream with constraints:', constraints);
   console.log('Using video device: ' + videoTracks[0].label);
   window.stream = stream; // make variable available to browser console
   document.querySelector('video').srcObject = stream;
@@ -70,28 +99,9 @@ navigator.mediaDevices.getUserMedia(constraints)
         flipHorizontal: false
       });
       if (pose && pose.keypoints) {
-        const leftEye = pose.keypoints.find(point => point.part === 'leftEye')
-        const rightEye = pose.keypoints.find(point => point.part === 'rightEye')
-        const leftElement = document.querySelector('#left')
-        const rightElement = document.querySelector('#right')
-        if (leftElement.style.display === 'none' || rightElement.style.display === 'none') {
-          leftElement.style.display = 'inline'
-          rightElement.style.display = 'inline'
-        }
-        if (leftEye && leftEye.position && leftEye.position.x && leftEye.position.y) {
-          const leftX = leftEye.position.x - 20
-          const leftY  = leftEye.position.y - 20
-          leftElement.style.left = `${leftX}px`
-          leftElement.style.top = `${leftY}px`
-        }
-        if (rightEye && rightEye.position && rightEye.position.x && rightEye.position.y) {
-          const rightX = rightEye.position.x - 20
-          const rightY = rightEye.position.y - 20
-          rightElement.style.left = `${rightX}px`
-          rightElement.style.top = `${rightY}px`
-        }
+        alignEmojisToKeypoints(pose)
       }
-    }, 1000);
+    }, 100);
   };
   runPosenet()
 })
@@ -118,6 +128,6 @@ function setErrorMsg(msg, error) {
     position: absolute;
     display: inline;
     text-align: left;
-    font-size: 72px;
+    font-size: 100px;
 }
 </style>
