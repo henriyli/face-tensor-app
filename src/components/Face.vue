@@ -4,23 +4,34 @@
     <video id="video" position="relative" width="100%" height="100%" autoplay></video>
     <span class="heart" id="left" display=none>💚</span>
     <span class="heart" id="right" display=none>💚</span>
+    <button v-on:click="switchCamera">Switch Camera</button>
   </div>
 </template>
 
 <script>
 import * as tf from '@tensorflow/tfjs';
 import * as posenet from '@tensorflow-models/posenet';
+import { videoIsNotLoaded, scaleVideoToWindow, alignEmojisToKeypoints  } from '../utils/utils'
 
 export default {
-  name: 'FaceTensor'
+  name: 'FaceTensor',
+  methods: {
+    switchCamera: async function() {
+      window.constraints.facingMode = window.constraints.facingMode === 'user' ? 'environment' : 'user'
+      const stream = await navigator.mediaDevices.getUserMedia(window.constraints)
+      window.stream = stream
+      document.querySelector('video').srcObject = stream;
+    }
+  }
 }
 // Put variables in global scope to make them available to the browser console.
 var constraints = window.constraints = {
   audio: false,
-  video: true
+  video: true,
+  facingMode: 'user'
 };
 
-console.log('user agent', navigator.userAgent)
+// setting backend based on useragent
 if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
   console.log('Using tensorflow with cpu backend')
   tf.setBackend('cpu')
@@ -29,52 +40,8 @@ if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(naviga
   tf.setBackend('webgl')
 }
     
-const scaleVideoToWindow = () => {
-  const videoElement = document.querySelector('#video')
-  const previousWidth = videoElement.videoWidth
-  const previousHeight = videoElement.videoHeight 
-  const videoWidth = document.body.clientWidth
-  const videoHeight = Math.round(videoWidth * 0.75)
-  if (Math.abs(previousWidth - videoHeight) > 25) {
-    videoElement.width = videoWidth 
-  }
-  if (Math.abs(previousHeight - videoHeight) > 50) {
-    videoElement.height = videoHeight
-  }
-}
-
-const videoIsNotLoaded = (videoElement) => {
-  return videoElement.videoHeight === 0
-}
-
-const alignEmojisToKeypoints = (pose) => {
-  const leftEye = pose.keypoints.find(point => point.part === 'leftEye')
-  const rightEye = pose.keypoints.find(point => point.part === 'rightEye')
-  const leftElement = document.querySelector('#left')
-  const rightElement = document.querySelector('#right')
-  const heightOffset = document.body.clientWidth > 700 ? 20 : 50 
-  if (leftElement.style.display === 'none' || rightElement.style.display === 'none') {
-    leftElement.style.display = 'inline'
-    rightElement.style.display = 'inline'
-  }
-  if (leftEye && leftEye.position && leftEye.position.x && leftEye.position.y) {
-    const leftX = Math.round(leftEye.position.x - 20)
-    const leftY  = Math.round(leftEye.position.y - heightOffset)
-    leftElement.style.left = `${leftX}px`
-    leftElement.style.top = `${leftY}px`
-  }
-  if (rightEye && rightEye.position && rightEye.position.x && rightEye.position.y) {
-    const rightX = Math.round(rightEye.position.x - 40)
-    const rightY = Math.round(rightEye.position.y - heightOffset)
-    rightElement.style.left = `${rightX}px`
-    rightElement.style.top = `${rightY}px`
-  }
-}
-
 navigator.mediaDevices.getUserMedia(constraints)
 .then(function(stream) {
-  var videoTracks = stream.getVideoTracks();
-  console.log('Using video device: ' + videoTracks[0].label);
   window.stream = stream; // make variable available to browser console
   document.querySelector('video').srcObject = stream;
 
