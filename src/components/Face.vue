@@ -1,8 +1,7 @@
 <template>
   <div class="content">
     <div id="errorMsg"></div>
-    <video id="video" position="relative" width="640" height="480" autoplay></video>
-    <canvas id="canvas" width="640" height="480"></canvas>
+    <video id="video" position="relative" width="100%" height="100%" autoplay></video>
     <span class="heart" id="left" display=none>💚</span>
     <span class="heart" id="right" display=none>💚</span>
   </div>
@@ -25,36 +24,52 @@ var constraints = window.constraints = {
 };
 
 tf.setBackend('webgl')
+    
+const scaleVideoToWindow = () => {
+  const videoElement = document.querySelector('#video')
+  const previousWidth = videoElement.videoWidth
+  const previousHeight = videoElement.videoHeight 
+  const videoWidth = document.body.clientWidth
+  const videoHeight = Math.round(videoWidth * 0.75)
+  if (Math.abs(previousWidth - videoHeight) > 25) {
+    videoElement.width = videoWidth 
+  }
+  if (Math.abs(previousHeight - videoHeight) > 50) {
+    videoElement.height = videoHeight
+  }
+}
+
+const videoIsNotLoaded = (videoElement) => {
+  return videoElement.videoHeight === 0
+}
 
 navigator.mediaDevices.getUserMedia(constraints)
 .then(function(stream) {
   var videoTracks = stream.getVideoTracks();
   console.log('Got stream with constraints:', constraints);
   console.log('Using video device: ' + videoTracks[0].label);
-  stream.onremovetrack = function() {
-    console.log('Stream ended');
-  };
   window.stream = stream; // make variable available to browser console
   document.querySelector('video').srcObject = stream;
 
   const runPosenet = async () => {
-    const videoHeight = document.body.clientHeight
-    const videoWidth = document.body.clientWidth
+    let videoHeight = document.body.clientHeight
+    let videoWidth = document.body.clientWidth
+    const videoElement = document.querySelector('#video')
     const net = await posenet.load({
       architecture: 'MobileNetV1',
       outputStride: 16,
       inputResolution: { width: videoWidth, height: videoHeight },
       multiplier: 0.75
     });
-    const videoElement = document.querySelector('#video')
     setInterval(async () => {
-      if (document.querySelector('#video').videoHeight === 0) {
+      if (videoIsNotLoaded(videoElement)) { 
         return
       }
+      scaleVideoToWindow()
       const pose = await net.estimateSinglePose(videoElement, {
         flipHorizontal: false
       });
-      if (pose) {
+      if (pose && pose.keypoints) {
         const leftEye = pose.keypoints.find(point => point.part === 'leftEye')
         const rightEye = pose.keypoints.find(point => point.part === 'rightEye')
         const leftElement = document.querySelector('#left')
@@ -63,13 +78,13 @@ navigator.mediaDevices.getUserMedia(constraints)
           leftElement.style.display = 'inline'
           rightElement.style.display = 'inline'
         }
-        if (leftEye && leftEye.position) {
+        if (leftEye && leftEye.position && leftEye.position.x && leftEye.position.y) {
           const leftX = leftEye.position.x - 20
           const leftY  = leftEye.position.y - 20
           leftElement.style.left = `${leftX}px`
           leftElement.style.top = `${leftY}px`
         }
-        if (rightEye && rightEye.position) {
+        if (rightEye && rightEye.position && rightEye.position.x && rightEye.position.y) {
           const rightX = rightEye.position.x - 20
           const rightY = rightEye.position.y - 20
           rightElement.style.left = `${rightX}px`
@@ -82,21 +97,18 @@ navigator.mediaDevices.getUserMedia(constraints)
 })
 .catch(function(error) {
   if (error.name === 'ConstraintNotSatisfiedError') {
-    errorMsg('The resolution ' + constraints.video.width.exact + 'x' +
+    setErrorMsg('The resolution ' + constraints.video.width.exact + 'x' +
         constraints.video.height.exact + ' px is not supported by your device.');
   } else if (error.name === 'PermissionDeniedError') {
-    errorMsg('Permissions have not been granted to use your camera and ' +
-      'microphone, you need to allow the page access to your devices in ' +
-      'order for the demo to work.');
+    setErrorMsg('Permissions have not been granted to use your camera');
   }
-  errorMsg('getUserMedia error: ' + error.name, error);
+  setErrorMsg('Unknown error: ' + error.name, error);
 });
 
-function errorMsg(msg, error) {
+function setErrorMsg(msg, error) {
   document.querySelector('#errorMsg').innerHTML += '<p>' + msg + '</p>';
   if (typeof error !== 'undefined') {
     console.log(msg, error)
-    console.error(error);
   }
 }
 </script>
@@ -106,6 +118,6 @@ function errorMsg(msg, error) {
     position: absolute;
     display: inline;
     text-align: left;
-    font-size: 60px;
+    font-size: 72px;
 }
 </style>
