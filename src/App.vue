@@ -1,7 +1,7 @@
 <template>
   <div id="app">
     <meta charset="utf-8">
-    <FaceTensor msg="Hi!"/>
+    <FaceTensor/>
   </div>
 </template>
 

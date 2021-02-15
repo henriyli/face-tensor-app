@@ -12,10 +12,7 @@ import * as tf from '@tensorflow/tfjs';
 import * as posenet from '@tensorflow-models/posenet';
 
 export default {
-  name: 'FaceTensor',
-  props: {
-    msg: String
-  }
+  name: 'FaceTensor'
 }
 // Put variables in global scope to make them available to the browser console.
 var constraints = window.constraints = {
@@ -129,6 +126,6 @@ function setErrorMsg(msg, error) {
     position: absolute;
     display: inline;
     text-align: left;
-    font-size: 90px;
+    font-size: 80px;
 }
 </style>
