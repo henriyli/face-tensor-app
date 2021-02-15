@@ -55,19 +55,20 @@ const alignEmojisToKeypoints = (pose) => {
   const rightEye = pose.keypoints.find(point => point.part === 'rightEye')
   const leftElement = document.querySelector('#left')
   const rightElement = document.querySelector('#right')
+  const heightOffset = document.body.clientWidth > 700 ? 20 : 50 
   if (leftElement.style.display === 'none' || rightElement.style.display === 'none') {
     leftElement.style.display = 'inline'
     rightElement.style.display = 'inline'
   }
   if (leftEye && leftEye.position && leftEye.position.x && leftEye.position.y) {
-    const leftX = leftEye.position.x - 20
-    const leftY  = leftEye.position.y - 20
+    const leftX = Math.round(leftEye.position.x - 20)
+    const leftY  = Math.round(leftEye.position.y - heightOffset)
     leftElement.style.left = `${leftX}px`
     leftElement.style.top = `${leftY}px`
   }
   if (rightEye && rightEye.position && rightEye.position.x && rightEye.position.y) {
-    const rightX = rightEye.position.x - 40
-    const rightY = rightEye.position.y - 20
+    const rightX = Math.round(rightEye.position.x - 40)
+    const rightY = Math.round(rightEye.position.y - heightOffset)
     rightElement.style.left = `${rightX}px`
     rightElement.style.top = `${rightY}px`
   }
@@ -87,7 +88,7 @@ navigator.mediaDevices.getUserMedia(constraints)
     const net = await posenet.load({
       architecture: 'MobileNetV1',
       outputStride: 16,
-      inputResolution: { width: videoWidth, height: videoHeight },
+      inputResolution: { width: videoWidth - 20, height: videoHeight},
       multiplier: 0.75
     });
     setInterval(async () => {
@@ -101,7 +102,7 @@ navigator.mediaDevices.getUserMedia(constraints)
       if (pose && pose.keypoints) {
         alignEmojisToKeypoints(pose)
       }
-    }, 100);
+    }, 150);
   };
   runPosenet()
 })
@@ -128,6 +129,6 @@ function setErrorMsg(msg, error) {
     position: absolute;
     display: inline;
     text-align: left;
-    font-size: 100px;
+    font-size: 90px;
 }
 </style>
